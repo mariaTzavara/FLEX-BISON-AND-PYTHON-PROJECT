@@ -1,0 +1,8 @@
+-- this is a comment
+CREATE TABLE students (name VARCHAR(20), age INT);
+
+/* multi
+   line
+   comment */
+
+SELECT name FROM students;
