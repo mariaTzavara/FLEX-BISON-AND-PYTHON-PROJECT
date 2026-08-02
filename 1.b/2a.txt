@@ -1,0 +1,11 @@
+CREATE TABLE students (
+    id INT
+);
+
+CREATE TABLE courses (
+    id INT
+);
+
+CREATE TABLE students (
+    name VARCHAR(50)
+);

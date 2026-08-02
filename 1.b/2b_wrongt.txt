@@ -1,0 +1,2 @@
+SELECT id FROM students;
+CREATE TABLE students (id INT);
