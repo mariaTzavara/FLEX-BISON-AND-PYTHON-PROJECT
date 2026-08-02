@@ -1,6 +1,7 @@
 %{
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 /*
  * Η yylex() δημιουργείται από το Flex.
@@ -22,10 +23,229 @@ extern int line;
 */
 extern FILE *yyin;
 
+int semantic_errors = 0;
 
 /* Συνάρτηση που καλείται όταν ο Bison εντοπίσει συντακτικό λάθος. */
 void yyerror(const char *s);
+
+#define MAX_TABLES 100
+#define MAX_COLUMNS 100
+
+/*
+ * Κάθε πίνακας έχει:
+ *
+ * 1. Το δικό του όνομα.
+ * 2. Έναν πίνακα με τα ονόματα των στηλών του.
+ * 3. Το πλήθος των στηλών του.
+ */
+typedef struct {
+    char *name;
+    char *columns[MAX_COLUMNS];
+    int column_count;
+} TableInfo;
+
+/* Αποθηκεύει όλους τους πίνακες που έχουν δημιουργηθεί. */
+TableInfo created_tables[MAX_TABLES];
+
+/* Πλήθος πινάκων που έχουν δημιουργηθεί. */
+int table_count = 0;
+
+/*
+ * Προσωρινή λίστα στηλών της CREATE TABLE
+ * που αναλύεται αυτή τη στιγμή.
+ */
+char *current_columns[MAX_COLUMNS];
+int current_column_count = 0;
+
+/*
+ * Προσωρινή λίστα των στηλών που χρησιμοποιούνται
+ * στην SELECT που αναλύεται αυτή τη στιγμή.
+ */
+char *used_columns[MAX_COLUMNS];
+int used_column_count = 0;
+
+/*
+ * Αναζητά έναν πίνακα με βάση το όνομά του.
+ *
+ * Επιστρέφει τη θέση του στον πίνακα created_tables,
+ * ή -1 αν δεν υπάρχει.
+ */
+int find_table(const char *name)
+{
+    int i;
+
+    for (i = 0; i < table_count; i++) {
+        if (strcmp(created_tables[i].name, name) == 0) {
+            return i;
+        }
+    }
+
+    return -1;
+}
+
+/* Επιστρέφει 1 αν ο πίνακας υπάρχει, διαφορετικά 0. */
+int table_exists(const char *name)
+{
+    return find_table(name) != -1;
+}
+
+/*
+ * Ελέγχει αν ένα όνομα στήλης υπάρχει ήδη στην προσωρινή
+ * λίστα της CREATE TABLE που αναλύεται.
+ */
+int current_column_exists(const char *name)
+{
+    int i;
+
+    for (i = 0; i < current_column_count; i++) {
+        if (strcmp(current_columns[i], name) == 0) {
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
+/* Προσθέτει μια στήλη στην προσωρινή λίστα της CREATE TABLE. */
+void add_current_column(const char *name)
+{
+    if (current_column_count >= MAX_COLUMNS) {
+        fprintf(stderr,
+                "Σφάλμα: ξεπεράστηκε το μέγιστο πλήθος στηλών.\n");
+        semantic_errors++;
+        return;
+    }
+
+    current_columns[current_column_count] = strdup(name);
+    current_column_count++;
+}
+
+/*
+ * Αποθηκεύει έναν καινούργιο πίνακα μαζί με τις στήλες
+ * που συγκεντρώθηκαν κατά την ανάλυση της CREATE TABLE.
+ */
+void add_table(const char *name)
+{
+    int i;
+
+    if (table_count >= MAX_TABLES) {
+        fprintf(stderr,
+                "Σφάλμα: δεν υπάρχει χώρος για άλλους πίνακες.\n");
+        semantic_errors++;
+        return;
+    }
+
+    created_tables[table_count].name = strdup(name);
+    created_tables[table_count].column_count = current_column_count;
+
+    for (i = 0; i < current_column_count; i++) {
+        created_tables[table_count].columns[i] =
+            strdup(current_columns[i]);
+    }
+
+    table_count++;
+}
+
+/*
+ * Επιστρέφει 1 αν η συγκεκριμένη στήλη έχει δηλωθεί
+ * στον συγκεκριμένο πίνακα.
+ */
+int column_exists_in_table(const char *table_name,
+                           const char *column_name)
+{
+    int table_index;
+    int i;
+
+    table_index = find_table(table_name);
+
+    if (table_index == -1) {
+        return 0;
+    }
+
+    for (i = 0;
+         i < created_tables[table_index].column_count;
+         i++) {
+
+        if (strcmp(
+                created_tables[table_index].columns[i],
+                column_name
+            ) == 0) {
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
+/* Καθαρίζει την προσωρινή λίστα στηλών της CREATE TABLE. */
+void clear_current_columns(void)
+{
+    int i;
+
+    for (i = 0; i < current_column_count; i++) {
+        free(current_columns[i]);
+    }
+
+    current_column_count = 0;
+}
+
+/* Αποθηκεύει προσωρινά μια στήλη που χρησιμοποιεί η SELECT. */
+void add_used_column(const char *name)
+{
+    if (used_column_count >= MAX_COLUMNS) {
+        fprintf(stderr,
+                "Σφάλμα: ξεπεράστηκε το μέγιστο πλήθος "
+                "στηλών στη SELECT.\n");
+        semantic_errors++;
+        return;
+    }
+
+    used_columns[used_column_count] = strdup(name);
+    used_column_count++;
+}
+
+/* Καθαρίζει τις προσωρινές στήλες της SELECT. */
+void clear_used_columns(void)
+{
+    int i;
+
+    for (i = 0; i < used_column_count; i++) {
+        free(used_columns[i]);
+    }
+
+    used_column_count = 0;
+}
+
+/*
+ * Ελέγχει ότι όλες οι στήλες της SELECT έχουν δηλωθεί
+ * στην CREATE TABLE του πίνακα που βρίσκεται στο FROM.
+ */
+void check_used_columns(const char *table_name)
+{
+    int i;
+
+    for (i = 0; i < used_column_count; i++) {
+        if (!column_exists_in_table(table_name, used_columns[i])) {
+            semantic_errors++;
+
+            fprintf(stderr,
+                    "\nΣημασιολογικό σφάλμα στη γραμμή %d: "
+                    "η στήλη '%s' δεν έχει οριστεί στον πίνακα '%s'.\n",
+                    line,
+                    used_columns[i],
+                    table_name);
+        }
+    }
+}
+
+
+
 %}
+
+
+%union {
+    char *str;
+}
 
 /* =========================================================
  *                       ΔΗΛΩΣΗ TOKENS
@@ -38,8 +258,11 @@ void yyerror(const char *s);
 %token CREATE TABLE SELECT FROM WHERE GROUP BY ORDER LIMIT
 %token INT FLOAT VARCHAR
 %token AND OR NOT IN
-%token IDENTIFIER INT_LITERAL FLOAT_LITERAL STRING_LITERAL
+%token <str> IDENTIFIER 
+%token INT_LITERAL FLOAT_LITERAL STRING_LITERAL
 %token EQ NE LT GT LE GE
+
+%type <str> table_name
 
 /* Το ελληνικό ερωτηματικό/semicolon ολοκληρώνει μια εντολή SQL. */
 %token SEMICOLON
@@ -121,13 +344,44 @@ statement:
  *
  * CREATE TABLE students (name VARCHAR(20), age INT);
 */
+
+create_start:
+    /* empty */
+    {
+        clear_current_columns();
+    }
+    ;
+
 create_table:
-    CREATE TABLE table_name '(' column_list_table ')'
+    CREATE TABLE table_name create_start
+    '(' column_list_table ')'
+    {
+        if (table_exists($3)) {
+            semantic_errors++;
+
+            fprintf(stderr,
+                    "\nΣημασιολογικό σφάλμα στη γραμμή %d: "
+                    "ο πίνακας '%s' έχει ήδη δημιουργηθεί.\n",
+                    line, $3);
+        }
+        else {
+            add_table($3);
+
+            printf("\nΟ πίνακας '%s' δημιουργήθηκε επιτυχώς.\n",
+                   $3);
+        }
+
+        clear_current_columns();
+        free($3);
+    }
     ;
 
 /* Το όνομα του πίνακα πρέπει να είναι ένα αναγνωριστικό. */
 table_name:
     IDENTIFIER
+    {
+        $$ = $1; /* Το $1 είναι η τιμή του IDENTIFIER, ενώ το $$ είναι η τιμή που επιστρέφει το table_name. */
+    }
     ;
 
 /*
@@ -161,6 +415,29 @@ column:
 /* Το όνομα μιας στήλης είναι ένα αναγνωριστικό. */
 column_name:
     IDENTIFIER
+    {
+        /*
+         * Ο έλεγχος γίνεται μόνο στην προσωρινή λίστα του
+         * συγκεκριμένου CREATE TABLE.
+         *
+         * Επομένως, το ίδιο όνομα επιτρέπεται σε διαφορετικούς
+         * πίνακες αλλά όχι δύο φορές στον ίδιο πίνακα.
+         */
+        if (current_column_exists($1)) {
+            semantic_errors++;
+
+            fprintf(stderr,
+                    "\nΣημασιολογικό σφάλμα στη γραμμή %d: "
+                    "η στήλη '%s' έχει δηλωθεί περισσότερες "
+                    "από μία φορές στον ίδιο πίνακα.\n",
+                    line, $1);
+        }
+        else {
+            add_current_column($1);
+        }
+
+        free($1);
+    }
     ;
 
 /*
@@ -194,8 +471,38 @@ type:
  * Τα τμήματα μέσα σε αγκύλες είναι προαιρετικά.
 */
 
+select_start:
+    /* empty */
+    {
+        clear_used_columns();
+    }
+    ;
+
 select_statement:
-    SELECT column_list FROM table_name opt_where opt_group_by opt_order_by opt_limit
+    SELECT select_start column_list FROM table_name
+    opt_where opt_group_by opt_order_by opt_limit
+    {
+        
+        if (!table_exists($5)) {
+            semantic_errors++;
+
+            fprintf(stderr,
+                    "\nΣημασιολογικό σφάλμα στη γραμμή %d: "
+                    "ο πίνακας '%s' που χρησιμοποιείται στον όρο "
+                    "FROM δεν έχει δημιουργηθεί προηγουμένως.\n",
+                    line, $5);
+        }
+        else {
+            /*
+             * Αν ο πίνακας υπάρχει, ελέγχουμε ότι όλες οι
+             * χρησιμοποιούμενες στήλες ανήκουν σε αυτόν.
+             */
+            check_used_columns($5);
+        }
+
+        clear_used_columns();
+        free($5);
+    }
     ;
 
 /*
@@ -220,7 +527,15 @@ column_list:
 */
 column_names:
     IDENTIFIER
+    {
+        add_used_column($1);
+        free($1);
+    }
     | column_names ',' IDENTIFIER
+    {
+        add_used_column($3);
+        free($3);
+    }
     ;
 
 
@@ -295,8 +610,20 @@ condition:
 */
 predicate:
     IDENTIFIER operator value
+    {
+        add_used_column($1);
+        free($1);
+    }
     | IDENTIFIER IN '(' value_list ')'
+    {
+        add_used_column($1);
+        free($1);
+    }
     | IDENTIFIER NOT IN '(' value_list ')'
+    {
+        add_used_column($1);
+        free($1);
+    }
     ;
 
 /*
@@ -357,8 +684,7 @@ value_list:
 void yyerror(const char *s) {
     printf("\nSyntax error at line %d\n", line);
 
-    /* Τερματίζουμε το πρόγραμμα με κωδικό αποτυχίας. */
-    exit(1);
+    
 }
 
 int main(int argc, char **argv) {
@@ -375,22 +701,21 @@ int main(int argc, char **argv) {
     }
     
     
-    /*
-     * Ξεκινά τη συντακτική ανάλυση.
-     *
-     * Η yyparse() δημιουργείται αυτόματα από τον Bison.
-     * Κατά την εκτέλεσή της καλεί τη yylex(), η οποία
-     * επιστρέφει τα tokens από τον Flex.
-    */
-    yyparse();
     
+    
+int result = yyparse();
 
-    /*
-     * Αν η yyparse() ολοκληρωθεί χωρίς να κληθεί η yyerror(),
-     * τότε το αρχείο είναι συντακτικά σωστό.
-    */
-    printf("\nProgram is syntactically correct.\n");
-
+if (result == 0) {
+    if (semantic_errors == 0) {
+        printf("\nΤο πρόγραμμα είναι συντακτικά και σημασιολογικά ορθό.\n");
+    } else {
+        printf("\nΗ συντακτική ανάλυση ολοκληρώθηκε επιτυχώς, "
+               "αλλά εντοπίστηκαν %d σημασιολογικά σφάλματα.\n",
+               semantic_errors);
+    }
+} else {
+    printf("\nΤο πρόγραμμα περιέχει συντακτικά σφάλματα.\n");
+}
     fclose(yyin);
     return 0;
 }
