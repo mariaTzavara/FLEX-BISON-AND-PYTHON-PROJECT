@@ -1,0 +1,4 @@
+SELECT name
+FROM students
+JOIN departments
+ON students.wrong_column = departments.id;

@@ -1,0 +1,18 @@
+CREATE TABLE students (
+    id INT,
+    name VARCHAR(50)
+);
+
+CREATE TABLE courses (
+    id INT,
+    student_id INT,
+    title VARCHAR(50)
+);
+
+SELECT s.name, c.title
+FROM students AS s
+JOIN courses AS c ON s.id = c.student_id
+WHERE s.id > 0
+GROUP BY s.name, c.title
+ORDER BY c.title
+LIMIT 10;

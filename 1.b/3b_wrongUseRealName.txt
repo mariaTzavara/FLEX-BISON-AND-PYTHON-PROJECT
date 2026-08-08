@@ -1,0 +1,2 @@
+SELECT students.name
+FROM students AS s;

@@ -1,0 +1,6 @@
+SELECT name
+FROM students
+JOIN departments
+ON universities.id = departments.university_id
+JOIN universities
+ON departments.university_id = universities.id;

@@ -1,0 +1,28 @@
+CREATE TABLE students (
+    id INT,
+    department_id INT,
+    name VARCHAR(30)
+);
+
+CREATE TABLE departments (
+    id INT,
+    university_id INT,
+    title VARCHAR(40)
+);
+
+CREATE TABLE universities (
+    id INT,
+    name VARCHAR(50)
+);
+
+SELECT name, title
+FROM students
+JOIN departments
+ON students.department_id = departments.id;
+
+SELECT name, title
+FROM students
+JOIN departments
+ON students.department_id = departments.id
+JOIN universities
+ON departments.university_id = universities.id;
