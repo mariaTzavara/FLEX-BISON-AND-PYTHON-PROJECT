@@ -1,4 +1,6 @@
+%option caseless 
 %{
+
 #include "parser.tab.h"
 #include <stdio.h>
 #include <string.h>
@@ -36,6 +38,9 @@ int line = 1;
 "BY"          { printf("%s", yytext); return BY; }
 "ORDER"       { printf("%s", yytext); return ORDER; }
 "LIMIT"       { printf("%s", yytext); return LIMIT; }
+"JOIN"        { printf("%s", yytext); return JOIN; }
+"ON"          { printf("%s", yytext); return ON; }
+"AS"          { printf("%s", yytext); return AS; }
 
  /* =========================================================
  *                       ΤΥΠΟΙ ΔΕΔΟΜΕΝΩΝ
@@ -158,6 +163,7 @@ int line = 1;
 "("     { printf("%s", yytext); return '('; }
 ")"     { printf("%s", yytext); return ')'; }
 "*"     { printf("%s", yytext); return '*'; }
+"."     { printf("%s", yytext); return '.'; }
 
  /* =========================================================
  *                     ΑΓΝΩΣΤΟΣ ΧΑΡΑΚΤΗΡΑΣ
