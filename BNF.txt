@@ -1,48 +1,115 @@
 <program> ::= <statements>
 
-<statements> ::= <statement> | <statements> <statement>
 
-<statement> ::= <create_table> ';' | <select> ';'
+<statements> ::= <statement>
+               | <statements> <statement>
 
-<create_table> ::= CREATE TABLE <table_name> '(' <column_list_table> ')' 
+
+<statement> ::= <create_table> ";"
+              | <select_statement> ";"
+
+
+<create_table> ::= "CREATE" "TABLE" <table_name>
+                   "(" <column_list_table> ")"
+
 
 <table_name> ::= IDENTIFIER
 
-<column_list_table> ::= <column> | <column_list_table> ',' <column>
+
+<column_list_table> ::= <column>
+                      | <column_list_table> "," <column>
+
 
 <column> ::= <column_name> <type>
 
+
 <column_name> ::= IDENTIFIER
 
-<type> ::= INT| FLOAT| VARCHAR '(' INT_LITERAL ')'
 
-<select> ::= SELECT <column_list> FROM <table_name> <opt_where> <opt_group_by> <opt_order_by> <opt_limit>
-
-<column_list> ::= '*' | <column_names>
-
-<column_names> ::= IDENTIFIER | <column_names> ',' IDENTIFIER
-
-<opt_where> ::= ε | WHERE <condition>
-
-<opt_group_by> ::= ε | GROUP BY <column_names>
-
-<opt_order_by> ::= ε | ORDER BY <column_names>
-
-<opt_limit> ::= ε | LIMIT INT_LITERAL
-
-<condition> ::= <condition> AND <condition> | <condition> OR <condition> | NOT <condition> | <predicate>
-
-<predicate> ::= IDENTIFIER <operator> <value> | IDENTIFIER IN '(' <value_list> ')' | IDENTIFIER NOT IN '(' <value_list> ')'
-
-<operator> ::= '=' | '!=' | '<' | '>' | '<=' | '>='
-
-<value> ::= INT_LITERAL | FLOAT_LITERAL | STRING_LITERAL
-
-<value_list> ::= <value> | <value_list> ',' <value>
+<type> ::= "INT"
+         | "FLOAT"
+         | "VARCHAR" "(" INT_LITERAL ")"
 
 
+<select_statement> ::= "SELECT" <column_list>
+                       "FROM" <table_source>
+                       <join_list>
+                       <opt_where>
+                       <opt_group_by>
+                       <opt_order_by>
+                       <opt_limit>
 
 
+<table_source> ::= <table_name>
+                 | <table_name> "AS" IDENTIFIER
 
 
+<join_list> ::= ε
+              | <join_list> <join_clause>
 
+
+<join_clause> ::= "JOIN" <table_source>
+                  "ON" <qualified_column>
+                  "=" <qualified_column>
+
+
+<column_list> ::= "*"
+                | <column_names>
+
+
+<column_names> ::= <column_reference>
+                 | <column_names> "," <column_reference>
+
+
+<column_reference> ::= IDENTIFIER
+                     | <qualified_column>
+
+
+<qualified_column> ::= IDENTIFIER "." IDENTIFIER
+
+
+<opt_where> ::= ε
+              | "WHERE" <condition>
+
+
+<opt_group_by> ::= ε
+                 | "GROUP" "BY" <column_names>
+
+
+<opt_order_by> ::= ε
+                 | "ORDER" "BY" <column_names>
+
+
+<opt_limit> ::= ε
+              | "LIMIT" INT_LITERAL
+
+
+<condition> ::= <condition> "AND" <condition>
+              | <condition> "OR" <condition>
+              | "NOT" <condition>
+              | "(" <condition> ")"
+              | <predicate>
+
+
+<predicate> ::= <column_reference> <operator> <value>
+              | <column_reference> "IN"
+                "(" <value_list> ")"
+              | <column_reference> "NOT" "IN"
+                "(" <value_list> ")"
+
+
+<operator> ::= "="
+             | "!="
+             | "<"
+             | ">"
+             | "<="
+             | ">="
+
+
+<value> ::= INT_LITERAL
+          | FLOAT_LITERAL
+          | STRING_LITERAL
+
+
+<value_list> ::= <value>
+               | <value_list> "," <value>
