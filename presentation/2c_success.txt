@@ -1,0 +1,17 @@
+CREATE TABLE students (
+    id INT,
+    name VARCHAR(50),
+    grade FLOAT
+);
+
+CREATE TABLE professors (
+    id INT,
+    name VARCHAR(50),
+    salary FLOAT
+);
+
+SELECT id, name, grade
+FROM students;
+
+SELECT id, name, salary
+FROM professors;

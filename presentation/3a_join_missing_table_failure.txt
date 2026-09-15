@@ -1,0 +1,8 @@
+CREATE TABLE students (
+    id INT,
+    name VARCHAR(50)
+);
+
+SELECT students.name, registrations.course_id
+FROM students
+JOIN registrations ON students.id = registrations.student_id;

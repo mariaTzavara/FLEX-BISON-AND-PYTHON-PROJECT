@@ -1,0 +1,19 @@
+CREATE TABLE students (
+    id INT,
+    name VARCHAR(50)
+);
+
+CREATE TABLE registrations (
+    student_id INT,
+    course_id INT
+);
+
+CREATE TABLE courses (
+    id INT,
+    title VARCHAR(60)
+);
+
+SELECT students.name, courses.title
+FROM students
+JOIN registrations ON courses.id = registrations.course_id
+JOIN courses ON students.id = courses.id;

@@ -1,0 +1,9 @@
+CREATE TABLE students (
+    id INT,
+    grade FLOAT,
+    name VARCHAR(50)
+);
+
+SELECT id, name
+FROM students
+WHERE name NOT IN ("Maria", "Eleni", "Nikos");

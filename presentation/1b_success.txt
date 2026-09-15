@@ -1,0 +1,17 @@
+CREATE TABLE students (
+    id INT,
+    name VARCHAR(40),
+    grade FLOAT
+);
+
+CREATE TABLE courses (
+    course_id INT,
+    title VARCHAR(60)
+);
+
+SELECT id, name, grade
+FROM students
+WHERE grade >= 5.0 AND id IN (1, 2, 3)
+GROUP BY id, name, grade
+ORDER BY grade
+LIMIT 10;

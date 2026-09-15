@@ -1,0 +1,10 @@
+CREATE TABLE students (
+    id INT,
+    name VARCHAR(50),
+    grade FLOAT
+);
+
+SELECT students.id, students.name
+FROM students AS s
+WHERE students.grade >= 5.0
+ORDER BY students.name;

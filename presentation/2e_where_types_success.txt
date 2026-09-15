@@ -1,0 +1,10 @@
+CREATE TABLE students (
+    id INT,
+    age INT,
+    grade FLOAT,
+    name VARCHAR(50)
+);
+
+SELECT id, name
+FROM students
+WHERE age >= 18 AND grade >= 5.5 AND name = "Maria";

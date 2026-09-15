@@ -1,0 +1,8 @@
+CREATE TABLE students (
+    id INT,
+    name VARCHAR(50),
+    grade FLOAT
+);
+
+SELECT id, age
+FROM students;

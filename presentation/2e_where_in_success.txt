@@ -1,0 +1,9 @@
+CREATE TABLE students (
+    id INT,
+    grade FLOAT,
+    name VARCHAR(50)
+);
+
+SELECT id, name
+FROM students
+WHERE grade IN (5, 6.5, 8);

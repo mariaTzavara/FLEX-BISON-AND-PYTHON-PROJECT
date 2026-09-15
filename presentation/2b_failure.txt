@@ -1,0 +1,12 @@
+CREATE TABLE students (
+    id INT,
+    name VARCHAR(50)
+);
+
+SELECT course_id, title
+FROM courses;
+
+CREATE TABLE courses (
+    course_id INT,
+    title VARCHAR(60)
+);

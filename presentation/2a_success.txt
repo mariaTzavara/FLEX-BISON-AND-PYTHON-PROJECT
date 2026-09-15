@@ -1,0 +1,15 @@
+CREATE TABLE students (
+    id INT,
+    name VARCHAR(50)
+);
+
+CREATE TABLE courses (
+    course_id INT,
+    title VARCHAR(60)
+);
+
+CREATE TABLE registrations (
+    student_id INT,
+    course_id INT,
+    grade FLOAT
+);

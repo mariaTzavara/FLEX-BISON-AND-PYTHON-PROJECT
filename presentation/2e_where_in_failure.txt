@@ -1,0 +1,9 @@
+CREATE TABLE students (
+    id INT,
+    age INT,
+    name VARCHAR(50)
+);
+
+SELECT id, name
+FROM students
+WHERE age IN (18, 20.5, 21);
